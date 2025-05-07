@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+
+{% block title %}Add New Cadet - Cadet Academic Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-10 mx-auto">
+            <!-- Navigation -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Cadet Directory</a></li>
+                    <li class="breadcrumb-item active">Add New Cadet</li>
+                </ol>
+            </nav>
+            
+            <!-- New Cadet Form -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-gradient">
+                    <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Add New Cadet</h4>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('new_cadet') }}" method="post">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="name" name="name" 
+                                        placeholder="Full Name" required>
+                                    <label for="name">Full Name</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="company" name="company">
+                                        <option value="">Select company...</option>
+                                        {% for company_option in companies %}
+                                        <option value="{{ company_option }}">{{ company_option }} Company</option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="company">Company</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="major" name="major">
+                                        <option value="">Select major...</option>
+                                        {% for major in majors %}
+                                        <option value="{{ major }}">{{ major }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="major">Major</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="standing" name="standing">
+                                        <option value="">Select standing...</option>
+                                        {% for standing_option in standings %}
+                                        <option value="{{ standing_option }}">
+                                            {{ standing_option }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="standing">Regimental Standing</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Initial Classes Section -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-book me-2"></i>Initial Classes (Optional)
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Initial Class Slots -->
+                        <div class="alert alert-info mb-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> Cadets start with 0 classes by default. You can add initial classes now or add them later.
+                        </div>
+                        
+                        <div class="d-flex mb-3">
+                            <button type="button" class="btn btn-primary" id="addClassBtn">
+                                <i class="fas fa-plus me-1"></i> Add a Class
+                            </button>
+                        </div>
+                        
+                        <div class="table-responsive mb-4">
+                            <table class="table table-bordered" id="classTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width: 10%">#</th>
+                                        <th style="width: 60%">Class</th>
+                                        <th style="width: 20%">Grade</th>
+                                        <th style="width: 10%">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="classTableBody">
+                                    <!-- Dynamic rows will be added here by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Template for class row (hidden) -->
+                        <template id="classRowTemplate">
+                            <tr>
+                                <td class="text-center class-number"></td>
+                                <td>
+                                    <select class="form-select class-select" name="class_">
+                                        <option value="" selected>Select a class...</option>
+                                        {% for department_name, classes in departments.items() %}
+                                            <optgroup label="{{ department_name or 'Other' }}">
+                                                {% for class in classes %}
+                                                    <option value="{{ class.name }}">{{ class.name }}</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                        {% endfor %}
+                                        <option value="custom">-- Add Custom Class --</option>
+                                    </select>
+                                    <!-- Hidden input for custom class names -->
+                                    <input type="text" class="form-control mt-2 custom-class-input" 
+                                           name="custom_class_"
+                                           placeholder="Enter custom class name" 
+                                           style="display: none;">
+                                </td>
+                                <td>
+                                    <select class="form-select grade-select" name="grade_" disabled>
+                                        <option value="">Select grade...</option>
+                                        {% for grade_option in grades %}
+                                        <option value="{{ grade_option }}" class="grade-option-{{ grade_option }}">
+                                            {{ grade_option }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-danger btn-sm remove-class-btn">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Comments Section -->
+                        <div class="mb-4">
+                            <h5 class="card-title">
+                                <i class="fas fa-comment me-2"></i>Comments (Optional)
+                            </h5>
+                            <div class="form-floating">
+                                <textarea class="form-control" placeholder="Add comments about this cadet" id="comments" name="comments" style="height: 100px"></textarea>
+                                <label for="comments">Add comments about this cadet (notes, special circumstances, etc.)</label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Add Cadet
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Information Card -->
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold"><i class="fas fa-clipboard-list me-2"></i>New Cadet Creation</h6>
+                            <ul>
+                                <li>Enter at minimum the cadet's full name</li>
+                                <li>Consider assigning a major for better organization</li>
+                                <li>Standing reflects regimental performance</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold"><i class="fas fa-graduation-cap me-2"></i>Class Assignment</h6>
+                            <ul>
+                                <li>Cadets can take <strong>any number of classes</strong></li>
+                                <li>Choose from existing classes or create custom ones</li>
+                                <li>Additional classes can be added after creating the cadet</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let rowCounter = 0;
+        const classTableBody = document.getElementById('classTableBody');
+        const rowTemplate = document.getElementById('classRowTemplate');
+        const addClassBtn = document.getElementById('addClassBtn');
+        
+        // Function to add a new class row
+        function addClassRow() {
+            rowCounter++;
+            
+            // Clone the template content
+            const newRow = document.importNode(rowTemplate.content, true).querySelector('tr');
+            
+            // Update the row number
+            newRow.querySelector('.class-number').textContent = rowCounter;
+            
+            // Update the select and input IDs and names
+            const classSelect = newRow.querySelector('.class-select');
+            const customClassInput = newRow.querySelector('.custom-class-input');
+            const gradeSelect = newRow.querySelector('.grade-select');
+            
+            classSelect.id = 'class_' + rowCounter;
+            classSelect.name = 'class_' + rowCounter;
+            customClassInput.id = 'custom_class_' + rowCounter;
+            customClassInput.name = 'custom_class_' + rowCounter;
+            gradeSelect.id = 'grade_' + rowCounter;
+            gradeSelect.name = 'grade_' + rowCounter;
+            
+            // Add event listeners
+            // Handle class selection change
+            classSelect.addEventListener('change', function() {
+                // Handle custom class option
+                if (this.value === 'custom') {
+                    customClassInput.style.display = 'block';
+                    customClassInput.required = true;
+                    customClassInput.focus();
+                    gradeSelect.disabled = true;
+                } else if (this.value) {
+                    customClassInput.style.display = 'none';
+                    customClassInput.required = false;
+                    customClassInput.value = '';
+                    // Enable grade select when a class is selected
+                    gradeSelect.disabled = false;
+                } else {
+                    customClassInput.style.display = 'none';
+                    customClassInput.required = false;
+                    customClassInput.value = '';
+                    // Disable grade select when no class is selected
+                    gradeSelect.disabled = true;
+                }
+            });
+            
+            // Handle custom class input changes
+            customClassInput.addEventListener('input', function() {
+                // Enable grade select only if there's text in the custom class input
+                gradeSelect.disabled = !this.value;
+            });
+            
+            // Apply grade styling to grade selects
+            gradeSelect.addEventListener('change', function() {
+                const selectedGrade = this.value;
+                
+                // Remove all existing grade classes
+                this.className = 'form-select grade-select';
+                
+                // Add class for selected grade
+                if (selectedGrade) {
+                    this.classList.add('grade-' + selectedGrade);
+                }
+            });
+            
+            // Handle remove button click
+            newRow.querySelector('.remove-class-btn').addEventListener('click', function() {
+                newRow.remove();
+                reorderClassNumbers();
+            });
+            
+            // Add the new row to the table
+            classTableBody.appendChild(newRow);
+        }
+        
+        // Function to reorder class numbers after removal
+        function reorderClassNumbers() {
+            const rows = classTableBody.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+                const rowNum = index + 1;
+                row.querySelector('.class-number').textContent = rowNum;
+                
+                // Update the IDs and names
+                const classSelect = row.querySelector('.class-select');
+                const customClassInput = row.querySelector('.custom-class-input');
+                const gradeSelect = row.querySelector('.grade-select');
+                
+                classSelect.id = 'class_' + rowNum;
+                classSelect.name = 'class_' + rowNum;
+                customClassInput.id = 'custom_class_' + rowNum;
+                customClassInput.name = 'custom_class_' + rowNum;
+                gradeSelect.id = 'grade_' + rowNum;
+                gradeSelect.name = 'grade_' + rowNum;
+            });
+            
+            // Update the row counter
+            rowCounter = rows.length;
+        }
+        
+        // Add class button click handler
+        addClassBtn.addEventListener('click', addClassRow);
+    });
+</script>
+{% endblock %}

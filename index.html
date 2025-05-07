@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadet Academic Tracker - Directory{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-10 mx-auto">
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="card shadow">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-gradient">
+                            <h5 class="mb-0"><i class="fas fa-users me-2"></i>Cadet Directory</h5>
+                            <a href="{{ url_for('new_cadet') }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i> New Cadet
+                            </a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item bg-light">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>Showing {{ filled_count }} active cadets</strong>
+                                            <span class="text-muted">({{ total_count - filled_count }} empty positions)</span>
+                                        </div>
+                                        <div>
+                                            <a href="{{ url_for('reset_class_slots') }}" class="btn btn-sm btn-outline-secondary me-2">
+                                                <i class="fas fa-sync me-1"></i> Reset Class Slots
+                                            </a>
+                                            <a href="{{ url_for('list_classes') }}" class="btn btn-sm btn-outline-secondary me-2">
+                                                <i class="fas fa-book me-1"></i> Manage Classes
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAllCadetsModal">
+                                                <i class="fas fa-trash-alt me-1"></i> Delete All Cadets
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {% for cadet in cadets %}
+                                    {% if cadet.name %}
+                                        <a href="{{ url_for('view_cadet', position=cadet.position) }}" class="list-group-item list-group-item-action fade-in">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="badge bg-secondary text-light me-2">{{ cadet.position }}</span>
+                                                    <strong>{{ cadet.name }}</strong>
+                                                    {% if cadet.major %}
+                                                        <span class="ms-2 badge bg-info">{{ cadet.major }}</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <span class="badge 
+                                                        {% if cadet.standing == 'Perfect' %}
+                                                            bg-success
+                                                        {% elif cadet.standing == 'Fine' %}
+                                                            bg-info
+                                                        {% elif cadet.standing == 'Needs assistance' %}
+                                                            bg-warning
+                                                        {% else %}
+                                                            bg-secondary
+                                                        {% endif %}
+                                                    ">{{ cadet.standing or 'No standing' }}</span>
+                                                    <span class="badge 
+                                                        {% if cadet.classes|length >= 5 %}
+                                                            bg-danger
+                                                        {% elif cadet.classes|length > 0 %}
+                                                            bg-dark
+                                                        {% else %}
+                                                            bg-secondary
+                                                        {% endif %} ms-2">
+                                                        {{ cadet.classes|length }}/5 Classes
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    {% else %}
+                                        <div class="list-group-item text-muted">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="badge bg-secondary me-2">{{ cadet.position }}</span>
+                                                    <em>Empty position</em>
+                                                </div>
+                                                <a href="{{ url_for('view_cadet', position=cadet.position) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-plus-circle me-1"></i> Assign
+                                                </a>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <!-- Quick Stats Card -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Quick Stats</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Cadet Roster</label>
+                                <div class="progress" style="height: 25px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" 
+                                        style="width: {{ (filled_count / total_count * 100) if total_count > 0 else 0 }}%;">
+                                        {{ filled_count }}/{{ total_count }} positions filled
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('new_cadet') }}" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-1"></i> Add New Cadet
+                                </a>
+                                <a href="{{ url_for('list_classes') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-book me-1"></i> Manage Class Options
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Guidelines Card -->
+                    <div class="card shadow">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Guidelines</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="mb-0">
+                                <li>Click on a cadet's name to view and edit their academic record</li>
+                                <li>Each cadet has <strong>5 dedicated class slots</strong> for easy grade updates</li>
+                                <li>Use the "Reset Class Slots" button to ensure all cadets have 5 slots</li>
+                                <li>Use the "Manage Classes" option to add or remove class options</li>
+                                <li>Classes can be assigned based on a cadet's major</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete All Cadets Modal -->
+<div class="modal fade" id="deleteAllCadetsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Delete All Cadets</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> This action will permanently delete all cadets from the system.
+                </div>
+                <p>Are you sure you want to delete all <strong>{{ filled_count }}</strong> cadets from the database?</p>
+                <p>This action will:</p>
+                <ul>
+                    <li>Permanently delete all cadet records</li>
+                    <li>Remove all associated academic data</li>
+                    <li>Free up all position numbers for reuse</li>
+                </ul>
+                <p class="text-danger fw-bold">This action cannot be reversed!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('delete_all_cadets') }}" method="post">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-1"></i> Delete All Cadets
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

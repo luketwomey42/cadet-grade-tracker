@@ -1,0 +1,623 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ cadet.name or 'New Cadet' }} - Academic Record{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-10 mx-auto">
+            <!-- Navigation -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Cadet Directory</a></li>
+                    <li class="breadcrumb-item active">{{ cadet.name or 'Position ' + cadet.position|string }}</li>
+                </ol>
+            </nav>
+            
+            <!-- Cadet Information Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-gradient">
+                    <h4 class="mb-0">
+                        {% if cadet.name %}
+                            <i class="fas fa-user me-2"></i>{{ cadet.name }}
+                            {% if cadet.major %}
+                                <span class="badge bg-info ms-2">{{ cadet.major }}</span>
+                            {% endif %}
+                        {% else %}
+                            <i class="fas fa-user-plus me-2"></i>New Cadet (Position {{ cadet.position }})
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('update_cadet', position=cadet.position) }}" method="post">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="name" name="name" 
+                                           value="{{ cadet.name or '' }}" placeholder="Full Name" required>
+                                    <label for="name">Full Name</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="company" name="company">
+                                        <option value="">Select company...</option>
+                                        {% for company_option in companies %}
+                                        <option value="{{ company_option }}" {% if cadet.company == company_option %}selected{% endif %}>
+                                            {{ company_option }} Company
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="company">Company</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="major" name="major">
+                                        <option value="">Select major...</option>
+                                        {% for major in majors %}
+                                        <option value="{{ major }}" {% if cadet.major == major %}selected{% endif %}>
+                                            {{ major }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="major">Major</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="standing" name="standing">
+                                        <option value="">Select standing...</option>
+                                        {% for standing_option in standings %}
+                                        <option value="{{ standing_option }}" 
+                                            {% if cadet.standing == standing_option %}selected{% endif %}>
+                                            {{ standing_option }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="standing">Regimental Standing</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Academic Record Section -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-book me-2"></i>Academic Record
+                                    </h5>
+                                    <button type="button" class="btn btn-primary btn-sm" id="addClassBtn">
+                                        <i class="fas fa-plus me-1"></i> Add Class
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Class Slots Table -->
+                        <div class="table-responsive mb-4">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width: 5%">#</th>
+                                        <th style="width: 65%">Class</th>
+                                        <th style="width: 15%">Grade</th>
+                                        <th style="width: 15%">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set slot_index = 1 %}
+                                    {% for class_name, grade in cadet.classes.items() %}
+                                    <tr>
+                                        <td class="text-center">{{ slot_index }}</td>
+                                        <td>
+                                            <select class="form-select" id="class_{{ slot_index }}" 
+                                                    name="class_{{ slot_index }}" 
+                                                    {% if "Class Slot" in class_name and not grade %}data-is-empty="true"{% endif %}>
+                                                <option value="">Select a class...</option>
+                                                {% for department_name, classes in departments.items() %}
+                                                    <optgroup label="{{ department_name or 'Other' }}">
+                                                        {% for class in classes %}
+                                                            <option value="{{ class.name }}" {% if class_name == class.name %}selected{% endif %}>
+                                                                {{ class.name }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </optgroup>
+                                                {% endfor %}
+                                                <!-- Keep the original class name if it doesn't match any in the dropdown -->
+                                                {% if class_name and "Class Slot" not in class_name %}
+                                                    {% set found = false %}
+                                                    {% for department_name, classes in departments.items() %}
+                                                        {% for class in classes %}
+                                                            {% if class.name == class_name %}
+                                                                {% set found = true %}
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    {% endfor %}
+                                                    {% if not found %}
+                                                        <option value="{{ class_name }}" selected>{{ class_name }} (Custom)</option>
+                                                    {% endif %}
+                                                {% endif %}
+                                                <option value="custom">-- Add Custom Class --</option>
+                                            </select>
+                                            <!-- Hidden input for custom class names -->
+                                            <input type="text" class="form-control mt-2 custom-class-input" 
+                                                   id="custom_class_{{ slot_index }}" 
+                                                   name="custom_class_{{ slot_index }}"
+                                                   placeholder="Enter custom class name" 
+                                                   style="display: none;">
+                                        </td>
+                                        <td>
+                                            <select class="form-select grade-select" 
+                                                    name="grade_{{ slot_index }}"
+                                                    {% if not grade %}disabled{% endif %}>
+                                                <option value="">No grade</option>
+                                                {% for grade_option in grades %}
+                                                <option value="{{ grade_option }}" 
+                                                    class="grade-option-{{ grade_option }}"
+                                                    {% if grade == grade_option %}selected{% endif %}>
+                                                    {{ grade_option }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                            <!-- Store the original name for reference -->
+                                            <input type="hidden" name="original_class_{{ slot_index }}" value="{{ class_name }}">
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-outline-danger clear-class-btn" 
+                                                    data-slot="{{ slot_index }}"
+                                                    {% if "Class Slot" in class_name and not grade %}disabled{% endif %}>
+                                                <i class="fas fa-times"></i> Clear
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% set slot_index = slot_index + 1 %}
+                                    {% endfor %}
+                                    
+                                    <!-- No more empty slots added by default -->
+                                    
+                                    <!-- Template for class row (hidden) -->
+                                    <template id="classRowTemplate">
+                                        <tr>
+                                            <td class="text-center class-number"></td>
+                                            <td>
+                                                <select class="form-select class-select" name="class_">
+                                                    <option value="">Select a class...</option>
+                                                    {% for department_name, classes in departments.items() %}
+                                                        <optgroup label="{{ department_name or 'Other' }}">
+                                                            {% for class in classes %}
+                                                                <option value="{{ class.name }}">{{ class.name }}</option>
+                                                            {% endfor %}
+                                                        </optgroup>
+                                                    {% endfor %}
+                                                    <option value="custom">-- Add Custom Class --</option>
+                                                </select>
+                                                <!-- Hidden input for custom class names -->
+                                                <input type="text" class="form-control mt-2 custom-class-input" 
+                                                       name="custom_class_"
+                                                       placeholder="Enter custom class name" 
+                                                       style="display: none;">
+                                            </td>
+                                            <td>
+                                                <select class="form-select grade-select" name="grade_" disabled>
+                                                    <option value="">No grade</option>
+                                                    {% for grade_option in grades %}
+                                                    <option value="{{ grade_option }}" class="grade-option-{{ grade_option }}">
+                                                        {{ grade_option }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <input type="hidden" name="original_class_" value="">
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-sm btn-danger remove-class-btn">
+                                                    <i class="fas fa-times"></i> Remove
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="alert alert-info mb-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Tip:</strong> Select a class from the dropdown and then assign a grade. The grade dropdown will be enabled once a class is selected.
+                        </div>
+                        
+                        <!-- Comments Section -->
+                        <div class="mb-4">
+                            <h5 class="card-title mb-3">
+                                <i class="fas fa-comment-alt me-2"></i>Comments
+                            </h5>
+                            <div class="form-floating">
+                                <textarea class="form-control" id="comments" name="comments" 
+                                          style="height: 150px" placeholder="Add comments about this cadet">{{ cadet.comments or '' }}</textarea>
+                                <label for="comments">Instructor Notes &amp; Observations</label>
+                            </div>
+                            <div class="form-text text-muted">
+                                Use this area to record important notes, observations, or additional information about this cadet.
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Back to Directory
+                            </a>
+                            <div>
+                                {% if cadet.name %}
+                                <button type="button" class="btn btn-outline-danger me-2" data-bs-toggle="modal" data-bs-target="#clearCadetModal">
+                                    <i class="fas fa-eraser me-1"></i> Clear Data
+                                </button>
+                                <button type="button" class="btn btn-danger me-2" data-bs-toggle="modal" data-bs-target="#deleteCadetModal">
+                                    <i class="fas fa-trash-alt me-1"></i> Delete Cadet
+                                </button>
+                                {% endif %}
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i> Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Additional Information Card -->
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold"><i class="fas fa-clipboard-list me-2"></i>Class Management</h6>
+                            <ul>
+                                <li>Cadets can take <strong>any number of classes</strong></li>
+                                <li>Classes can be selected from existing options or added as custom</li>
+                                <li>Grades can be updated at any time</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold"><i class="fas fa-user-graduate me-2"></i>Academic Record</h6>
+                            <ul>
+                                <li>Assign a major to better organize cadet's academic path</li>
+                                <li>Track standing to monitor regimental performance</li>
+                                <li>Changes are saved only when "Save Changes" is clicked</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Remove Class Modal -->
+<div class="modal fade" id="removeClassModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Remove Class</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to remove <span id="class-name-span" class="fw-bold"></span> 
+                from {{ cadet.name or 'this cadet' }}'s record?</p>
+                <p class="text-muted small">This action will remove the class from this cadet's academic record.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('remove_class', position=cadet.position) }}" method="post">
+                    <input type="hidden" id="class_name_input" name="class_name">
+                    <button type="submit" class="btn btn-danger">Remove Class</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clear Cadet Modal -->
+<div class="modal fade" id="clearCadetModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Clear Cadet Record</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Warning:</strong> This action cannot be undone.
+                </div>
+                <p>Are you sure you want to clear <span class="fw-bold">{{ cadet.name }}</span>'s record?</p>
+                <p>This will remove all information including:</p>
+                <ul>
+                    <li>Name and personal information</li>
+                    <li>Major</li>
+                    <li>Regimental standing</li>
+                    <li>All class registrations and grades</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('clear_cadet', position=cadet.position) }}" method="post">
+                    <button type="submit" class="btn btn-danger">Clear Record</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Cadet Modal -->
+<div class="modal fade" id="deleteCadetModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Delete Cadet</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> This action is permanent and cannot be undone.
+                </div>
+                <p>Are you sure you want to completely delete <span class="fw-bold">{{ cadet.name }}</span> from the system?</p>
+                <p>Unlike clearing a record, this will:</p>
+                <ul>
+                    <li>Permanently remove the cadet from the database</li>
+                    <li>Free up the position number for reuse</li>
+                    <li>Delete all associated academic records</li>
+                </ul>
+                <p class="text-danger fw-bold">This action cannot be reversed.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('delete_cadet', position=cadet.position) }}" method="post">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-1"></i> Delete Permanently
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let nextClassIndex = {{ cadet.classes|length + 1 }};
+        const classTableBody = document.getElementById('classTableBody');
+        const classRowTemplate = document.getElementById('classRowTemplate');
+        const addClassBtn = document.getElementById('addClassBtn');
+        
+        // Initialize existing classes
+        initializeExistingClasses();
+        
+        // Function to initialize existing classes
+        function initializeExistingClasses() {
+            // Clear any existing rows
+            while (classTableBody.firstChild) {
+                classTableBody.removeChild(classTableBody.firstChild);
+            }
+            
+            // Add rows for existing classes
+            {% for class_name, grade in cadet.classes.items() %}
+                addExistingClassRow("{{ class_name }}", "{{ grade }}", {{ loop.index }});
+            {% endfor %}
+        }
+        
+        // Function to add existing class row
+        function addExistingClassRow(className, grade, index) {
+            // Clone the template
+            const template = document.importNode(classRowTemplate.content, true);
+            const row = template.querySelector('tr');
+            
+            // Set class number
+            row.querySelector('.class-number').textContent = index;
+            
+            // Set up select field
+            const classSelect = row.querySelector('.class-select');
+            classSelect.id = `class_${index}`;
+            classSelect.name = `class_${index}`;
+            
+            // Set custom class input
+            const customClassInput = row.querySelector('.custom-class-input');
+            customClassInput.id = `custom_class_${index}`;
+            customClassInput.name = `custom_class_${index}`;
+            
+            // Update grade select
+            const gradeSelect = row.querySelector('.grade-select');
+            gradeSelect.id = `grade_${index}`;
+            gradeSelect.name = `grade_${index}`;
+            gradeSelect.disabled = !className;
+            
+            // Update hidden original class field
+            const originalClassInput = row.querySelector('input[name="original_class_"]');
+            originalClassInput.name = `original_class_${index}`;
+            originalClassInput.value = className;
+            
+            // Select the correct class
+            if (className) {
+                let found = false;
+                for (const option of classSelect.options) {
+                    if (option.value === className) {
+                        option.selected = true;
+                        found = true;
+                        break;
+                    }
+                }
+                
+                // If class not found in options, add it as a custom option
+                if (!found && className !== '') {
+                    const customOption = document.createElement('option');
+                    customOption.value = className;
+                    customOption.textContent = `${className} (Custom)`;
+                    customOption.selected = true;
+                    classSelect.add(customOption, 1); // Add after the "Select a class..." option
+                }
+            }
+            
+            // Select the correct grade
+            if (grade) {
+                for (const option of gradeSelect.options) {
+                    if (option.value === grade) {
+                        option.selected = true;
+                        gradeSelect.classList.add(`grade-${grade}`);
+                        break;
+                    }
+                }
+            }
+            
+            // Add event listeners
+            setupClassSelectListeners(classSelect, customClassInput, gradeSelect);
+            setupGradeSelectListeners(gradeSelect);
+            
+            // Set up remove button
+            const removeBtn = row.querySelector('.remove-class-btn');
+            removeBtn.dataset.className = className;
+            removeBtn.addEventListener('click', function() {
+                row.remove();
+                updateClassNumbers();
+            });
+            
+            // Add the row to the table
+            classTableBody.appendChild(row);
+        }
+        
+        // Function to add new class row
+        function addNewClassRow() {
+            // Clone the template
+            const template = document.importNode(classRowTemplate.content, true);
+            const row = template.querySelector('tr');
+            
+            // Update ID and name attributes with the current index
+            row.querySelector('.class-number').textContent = nextClassIndex;
+            
+            const classSelect = row.querySelector('.class-select');
+            classSelect.id = `class_${nextClassIndex}`;
+            classSelect.name = `class_${nextClassIndex}`;
+            
+            const customClassInput = row.querySelector('.custom-class-input');
+            customClassInput.id = `custom_class_${nextClassIndex}`;
+            customClassInput.name = `custom_class_${nextClassIndex}`;
+            
+            const gradeSelect = row.querySelector('.grade-select');
+            gradeSelect.id = `grade_${nextClassIndex}`;
+            gradeSelect.name = `grade_${nextClassIndex}`;
+            
+            const originalClassInput = row.querySelector('input[name="original_class_"]');
+            originalClassInput.name = `original_class_${nextClassIndex}`;
+            
+            // Add event listeners
+            setupClassSelectListeners(classSelect, customClassInput, gradeSelect);
+            setupGradeSelectListeners(gradeSelect);
+            
+            // Set up remove button
+            const removeBtn = row.querySelector('.remove-class-btn');
+            removeBtn.addEventListener('click', function() {
+                row.remove();
+                updateClassNumbers();
+            });
+            
+            // Add the row to the table
+            classTableBody.appendChild(row);
+            
+            // Increment the index for the next class
+            nextClassIndex++;
+        }
+        
+        // Function to update class numbers after removing a row
+        function updateClassNumbers() {
+            const rows = classTableBody.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+                const classNumber = index + 1;
+                row.querySelector('.class-number').textContent = classNumber;
+                
+                // Update IDs and names
+                const classSelect = row.querySelector('.class-select');
+                classSelect.id = `class_${classNumber}`;
+                classSelect.name = `class_${classNumber}`;
+                
+                const customClassInput = row.querySelector('.custom-class-input');
+                customClassInput.id = `custom_class_${classNumber}`;
+                customClassInput.name = `custom_class_${classNumber}`;
+                
+                const gradeSelect = row.querySelector('.grade-select');
+                gradeSelect.id = `grade_${classNumber}`;
+                gradeSelect.name = `grade_${classNumber}`;
+                
+                const originalClassInput = row.querySelector('input[name^="original_class_"]');
+                originalClassInput.name = `original_class_${classNumber}`;
+            });
+            
+            // Update next class index
+            nextClassIndex = rows.length + 1;
+        }
+        
+        // Event listener for add class button
+        addClassBtn.addEventListener('click', function() {
+            addNewClassRow();
+        });
+        
+        // Function to set up class select listeners
+        function setupClassSelectListeners(classSelect, customClassInput, gradeSelect) {
+            classSelect.addEventListener('change', function() {
+                // Enable or disable grade select based on class selection
+                gradeSelect.disabled = !this.value || this.value === 'custom';
+                
+                // Handle custom class option
+                if (this.value === 'custom') {
+                    customClassInput.style.display = 'block';
+                    customClassInput.required = true;
+                    customClassInput.focus();
+                    
+                    // Add change event to custom class input
+                    customClassInput.onchange = customClassInput.onkeyup = function() {
+                        gradeSelect.disabled = !this.value;
+                    };
+                } else {
+                    customClassInput.style.display = 'none';
+                    customClassInput.required = false;
+                    customClassInput.value = '';
+                }
+            });
+        }
+        
+        // Function to set up grade select listeners
+        function setupGradeSelectListeners(gradeSelect) {
+            gradeSelect.addEventListener('change', function() {
+                // Remove all grade classes
+                this.className = 'form-select grade-select';
+                
+                // Add class for selected grade
+                if (this.value) {
+                    this.classList.add(`grade-${this.value}`);
+                }
+            });
+        }
+        
+        // Handle remove class modal
+        const removeClassModal = document.getElementById('removeClassModal');
+        if (removeClassModal) {
+            removeClassModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const className = button.getAttribute('data-class-name');
+                
+                const classNameSpan = document.getElementById('class-name-span');
+                if (classNameSpan) {
+                    classNameSpan.textContent = className;
+                }
+                
+                const classNameInput = document.getElementById('class_name_input');
+                if (classNameInput) {
+                    classNameInput.value = className;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,255 @@
+/* Custom styles for Cadet Academic Tracker */
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bs-dark-bg-subtle);
+    min-height: 100vh;
+}
+
+/* Header and layout */
+.app-header {
+    background: linear-gradient(135deg, var(--bs-dark-bg-subtle) 0%, var(--bs-dark) 100%);
+    padding: 1.5rem 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.app-title {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 0;
+}
+
+/* Cards */
+.card {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: var(--bs-dark-bg-subtle);
+    padding: 1rem 1.25rem;
+    font-weight: 600;
+}
+
+/* Breadcrumbs */
+.breadcrumb {
+    background-color: var(--bs-dark-bg-subtle);
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+}
+
+/* Buttons */
+.btn {
+    font-weight: 500;
+    border-radius: 0.375rem;
+    padding: 0.5rem 1rem;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.btn-xs {
+    padding: 0.15rem 0.4rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    border-radius: 0.2rem;
+}
+
+/* List groups */
+.list-group-item {
+    padding: 0.75rem 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.list-group-item-action:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+}
+
+/* Badges */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* Forms */
+.form-control, .form-select {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    border-color: var(--bs-border-color);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: rgba(var(--bs-primary-rgb), 0.5);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.15);
+}
+
+/* Tables */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+    background-color: var(--bs-dark);
+    color: var(--bs-light);
+}
+
+.table td, .table th {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+}
+
+.table-sm td, .table-sm th {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+/* Toasts */
+.toast-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1090;
+}
+
+/* Modal */
+.modal-content {
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.modal-header, .modal-footer {
+    background-color: var(--bs-dark-bg-subtle);
+}
+
+/* Custom accordion */
+.accordion-button:not(.collapsed) {
+    background-color: var(--bs-dark-bg-subtle);
+    color: var(--bs-emphasis-color);
+}
+
+.accordion-button:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-dark-rgb), 0.15);
+}
+
+/* Grade colors - Enhanced and colorful */
+.grade-A {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9) !important;
+    color: #1b5e20 !important;
+    font-weight: bold !important;
+    border: 1px solid #81c784 !important;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+
+.grade-B {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+    color: #0d47a1 !important;
+    font-weight: bold !important;
+    border: 1px solid #64b5f6 !important;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+
+.grade-C {
+    background: linear-gradient(135deg, #fff8e1, #ffecb3) !important;
+    color: #ff6f00 !important;
+    font-weight: bold !important;
+    border: 1px solid #ffd54f !important;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+
+.grade-D {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2) !important;
+    color: #e65100 !important;
+    font-weight: bold !important;
+    border: 1px solid #ffb74d !important;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+
+.grade-F {
+    background: linear-gradient(135deg, #ffebee, #ffcdd2) !important;
+    color: #b71c1c !important;
+    font-weight: bold !important;
+    border: 1px solid #e57373 !important;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Enhanced grade select elements */
+.grade-select {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    text-align: center;
+}
+
+.grade-select:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Grade option styling in dropdowns */
+option.grade-option-A {
+    background-color: #e8f5e9 !important;
+    color: #1b5e20 !important;
+    font-weight: bold !important;
+}
+
+option.grade-option-B {
+    background-color: #e3f2fd !important;
+    color: #0d47a1 !important;
+    font-weight: bold !important;
+}
+
+option.grade-option-C {
+    background-color: #fff8e1 !important;
+    color: #ff6f00 !important;
+    font-weight: bold !important;
+}
+
+option.grade-option-D {
+    background-color: #fff3e0 !important;
+    color: #e65100 !important;
+    font-weight: bold !important;
+}
+
+option.grade-option-F {
+    background-color: #ffebee !important;
+    color: #b71c1c !important;
+    font-weight: bold !important;
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Standing colors */
+.standing-Perfect {
+    background-color: var(--bs-success);
+}
+
+.standing-Fine {
+    background-color: var(--bs-info);
+}
+
+.standing-Needs-assistance {
+    background-color: var(--bs-warning);
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}

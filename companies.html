@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadet Companies{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4 text-center">Cadet Academic Tracker</h1>
+            <p class="lead text-center">Select your company to access your cadets</p>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="row mb-4">
+                <div class="col">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="row row-cols-1 row-cols-md-3 g-4 mt-2">
+        <!-- 2nd Company Card -->
+        <div class="col">
+            <div class="card h-100 shadow {% if not auth_2nd %}border-secondary opacity-75{% endif %}">
+                <div class="card-header {% if auth_2nd %}bg-primary text-white{% else %}bg-light text-muted{% endif %}">
+                    <h2 class="h4 mb-0">2nd Company</h2>
+                    {% if auth_2nd %}<span class="badge bg-light text-dark float-end">Authorized</span>{% endif %}
+                </div>
+                <div class="card-body">
+                    {% if auth_2nd %}
+                    <p class="card-text">
+                        <strong>Cadets:</strong> {{ second_company_count }}
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('second_company') }}" class="btn btn-primary">Access 2nd Company</a>
+                    </div>
+                    {% else %}
+                    <p class="card-text">
+                        <em>Login required to view cadet information</em>
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('second_company') }}" class="btn btn-outline-secondary">Login to 2nd Company</a>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-muted">
+                    <small>2nd Company Leaders Only</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 4th Company Card -->
+        <div class="col">
+            <div class="card h-100 shadow {% if not auth_4th %}border-secondary opacity-75{% endif %}">
+                <div class="card-header {% if auth_4th %}bg-success text-white{% else %}bg-light text-muted{% endif %}">
+                    <h2 class="h4 mb-0">4th Company</h2>
+                    {% if auth_4th %}<span class="badge bg-light text-dark float-end">Authorized</span>{% endif %}
+                </div>
+                <div class="card-body">
+                    {% if auth_4th %}
+                    <p class="card-text">
+                        <strong>Cadets:</strong> {{ fourth_company_count }}
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('fourth_company') }}" class="btn btn-success">Access 4th Company</a>
+                    </div>
+                    {% else %}
+                    <p class="card-text">
+                        <em>Login required to view cadet information</em>
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('fourth_company') }}" class="btn btn-outline-secondary">Login to 4th Company</a>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-muted">
+                    <small>4th Company Leaders Only</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 6th Company Card -->
+        <div class="col">
+            <div class="card h-100 shadow {% if not auth_6th %}border-secondary opacity-75{% endif %}">
+                <div class="card-header {% if auth_6th %}bg-danger text-white{% else %}bg-light text-muted{% endif %}">
+                    <h2 class="h4 mb-0">6th Company</h2>
+                    {% if auth_6th %}<span class="badge bg-light text-dark float-end">Authorized</span>{% endif %}
+                </div>
+                <div class="card-body">
+                    {% if auth_6th %}
+                    <p class="card-text">
+                        <strong>Cadets:</strong> {{ sixth_company_count }}
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('sixth_company') }}" class="btn btn-danger">Access 6th Company</a>
+                    </div>
+                    {% else %}
+                    <p class="card-text">
+                        <em>Login required to view cadet information</em>
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('sixth_company') }}" class="btn btn-outline-secondary">Login to 6th Company</a>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-muted">
+                    <small>6th Company Leaders Only</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if not auth_2nd and not auth_4th and not auth_6th %}
+    <div class="row mt-4">
+        <div class="col">
+            <div class="alert alert-info">
+                <strong>Note:</strong> You need to log in to at least one company to manage cadets.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mt-4">
+        <div class="col text-center">
+            <a href="{{ url_for('new_cadet') }}" class="btn btn-primary btn-lg mb-3">Add New Cadet</a>
+            <a href="{{ url_for('list_classes') }}" class="btn btn-outline-secondary btn-lg mb-3">Manage Classes</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,618 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title|default('Academic Analytics') }} - Cadet Academic Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Navigation -->
+    <nav aria-label="breadcrumb" class="pt-3 pb-2 mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Cadet Directory</a></li>
+            {% if company_view == "all" %}
+            <li class="breadcrumb-item active">Academic Analytics</li>
+            {% else %}
+            <li class="breadcrumb-item"><a href="{{ url_for('analytics') }}">Academic Analytics</a></li>
+            <li class="breadcrumb-item active">{{ company_view }} Company</li>
+            {% endif %}
+        </ol>
+    </nav>
+    
+    <!-- Page Header -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-lg-6">
+            <h1 class="h2 fw-bold mb-1">
+                <i class="fas fa-chart-bar text-primary me-2"></i>Class Grade Analysis
+            </h1>
+            <p class="text-muted m-0">
+                {% if company_view == "all" %}
+                Viewing data across all authorized companies
+                {% else %}
+                Viewing data for {{ company_view }} Company only
+                {% endif %}
+            </p>
+        </div>
+        
+        <!-- Key Metrics -->
+        <div class="col-lg-6">
+            <div class="row g-2 text-center">
+                <div class="col-6">
+                    <div class="card bg-primary text-white shadow-sm">
+                        <div class="card-body py-2">
+                            <p class="mb-0 small">Total Cadets</p>
+                            <h3 class="mb-0 fw-bold" id="totalCadets">{{ total_cadets }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card bg-success text-white shadow-sm">
+                        <div class="card-body py-2">
+                            <p class="mb-0 small">Average GPA</p>
+                            <h3 class="mb-0 fw-bold" id="averageGPA">{{ avg_gpa }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Company Filter Controls -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body py-2">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    {% if company_view == "all" %}
+                    <label class="form-label fw-bold mb-1 small">Filter by Company:</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% if auth_2nd %}
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input company-filter" type="checkbox" id="company2" value="2nd" checked>
+                            <label class="form-check-label" for="company2">2nd Company</label>
+                        </div>
+                        {% endif %}
+                        
+                        {% if auth_4th %}
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input company-filter" type="checkbox" id="company4" value="4th" checked>
+                            <label class="form-check-label" for="company4">4th Company</label>
+                        </div>
+                        {% endif %}
+                        
+                        {% if auth_6th %}
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input company-filter" type="checkbox" id="company6" value="6th" checked>
+                            <label class="form-check-label" for="company6">6th Company</label>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="btn-group btn-group-sm">
+                        <a href="{{ url_for('analytics') }}" class="btn btn-outline-primary">All Companies</a>
+                        {% if auth_2nd %}
+                        <a href="{{ url_for('analytics_2nd_company') }}" class="btn btn-outline-primary {{ 'active' if company_view == '2nd' }}">2nd Company</a>
+                        {% endif %}
+                        
+                        {% if auth_4th %}
+                        <a href="{{ url_for('analytics_4th_company') }}" class="btn btn-outline-primary {{ 'active' if company_view == '4th' }}">4th Company</a>
+                        {% endif %}
+                        
+                        {% if auth_6th %}
+                        <a href="{{ url_for('analytics_6th_company') }}" class="btn btn-outline-primary {{ 'active' if company_view == '6th' }}">6th Company</a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6 text-end">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="hideEmptyClasses" checked>
+                        <label class="form-check-label" for="hideEmptyClasses">Hide classes with no grades</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Detailed Grade Table -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white py-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Class Grade Breakdown</h5>
+                <div class="input-group input-group-sm w-auto">
+                    <span class="input-group-text bg-white text-primary">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="classFilterInput" class="form-control form-control-sm" placeholder="Search classes...">
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            <!-- Grade Legend -->
+            <div class="bg-light p-2 d-flex justify-content-center gap-2 border-bottom">
+                <span class="badge bg-primary">A: Excellent</span>
+                <span class="badge bg-info">B: Good</span>
+                <span class="badge bg-warning">C: Average</span>
+                <span class="badge bg-orange">D: Poor</span>
+                <span class="badge bg-danger">F: Failing</span>
+            </div>
+            
+            <!-- Grade Table -->
+            <div class="table-responsive">
+                <table class="table table-sm table-hover table-striped align-middle mb-0" id="detailedGradeTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Class</th>
+                            <th class="text-center">A</th>
+                            <th class="text-center">B</th>
+                            <th class="text-center">C</th>
+                            <th class="text-center">D</th>
+                            <th class="text-center">F</th>
+                            <th class="text-center">No Grade</th>
+                            <th class="text-center">Total</th>
+                            <th class="text-center">Avg. GPA</th>
+                            <th class="text-center">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailedGradeTableBody">
+                        <tr>
+                            <td colspan="10" class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                <p class="mt-1 text-muted small">Loading data...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Data Source Indicator -->
+            <div class="bg-light py-1 px-3 border-top">
+                <small class="text-muted">Showing data for {{ company_view|default('all authorized companies') }}</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for detailed class grade chart -->
+    <div class="modal fade" id="classDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-gradient bg-primary text-white py-2">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        <h5 class="modal-title fw-bold" id="classDetailModalTitle">Class Grade Distribution</h5>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="row mb-2">
+                        <div class="col-12">
+                            <div id="classDetailStats" class="d-flex justify-content-center mb-2 flex-wrap">
+                                <div class="badge bg-primary mx-1 px-2 py-1 mb-1">A: <span id="countA">0</span></div>
+                                <div class="badge bg-info mx-1 px-2 py-1 mb-1">B: <span id="countB">0</span></div>
+                                <div class="badge bg-warning mx-1 px-2 py-1 mb-1">C: <span id="countC">0</span></div>
+                                <div class="badge bg-orange mx-1 px-2 py-1 mb-1">D: <span id="countD">0</span></div>
+                                <div class="badge bg-danger mx-1 px-2 py-1 mb-1">F: <span id="countF">0</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container" style="position: relative; height: 200px;">
+                        <canvas id="classDetailChart"></canvas>
+                    </div>
+                    <div class="text-center mt-2">
+                        <p class="mb-0 text-muted small" id="classDetailSummary">Average GPA: 0.00 | Total Students: 0</p>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+    // Store all cadets data from server
+    const cadetsData = {{ cadets_json|safe }};
+    
+    // Chart.js colors - use bootstrap theme colors
+    const chartColors = {
+        blue: 'rgba(13, 110, 253, 0.8)',
+        indigo: 'rgba(102, 16, 242, 0.8)',
+        purple: 'rgba(111, 66, 193, 0.8)',
+        pink: 'rgba(214, 51, 132, 0.8)',
+        red: 'rgba(220, 53, 69, 0.8)',
+        orange: 'rgba(253, 126, 20, 0.8)',
+        yellow: 'rgba(255, 193, 7, 0.8)',
+        green: 'rgba(25, 135, 84, 0.8)',
+        teal: 'rgba(32, 201, 151, 0.8)',
+        cyan: 'rgba(13, 202, 240, 0.8)',
+        gray: 'rgba(108, 117, 125, 0.8)',
+    };
+    
+    // Chart.js options
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+            }
+        }
+    };
+    
+    // Filter cadets by selected companies
+    function filterCadetsByCompany() {
+        const selectedCompanies = Array.from(document.querySelectorAll('.company-filter:checked'))
+            .map(checkbox => checkbox.value);
+        
+        return cadetsData.filter(cadet => {
+            return cadet.company && selectedCompanies.includes(cadet.company);
+        });
+    }
+    
+    // Count grades across all classes
+    function countGrades(filteredCadets) {
+        const gradeCount = {
+            'A': 0,
+            'B': 0,
+            'C': 0,
+            'D': 0,
+            'F': 0,
+            'No Grade': 0
+        };
+        
+        filteredCadets.forEach(cadet => {
+            Object.values(cadet.classes).forEach(grade => {
+                if (grade) {
+                    gradeCount[grade] = (gradeCount[grade] || 0) + 1;
+                } else {
+                    gradeCount['No Grade'] = (gradeCount['No Grade'] || 0) + 1;
+                }
+            });
+        });
+        
+        return gradeCount;
+    }
+    
+    // We've removed the unused functions for counting majors, standings, 
+    // and analyzing class performance since we're focusing only on 
+    // overall grade distribution and detailed class breakdowns.
+    
+    // Calculate statistics
+    function calculateStatistics(filteredCadets) {
+        // Total cadets
+        const totalCadets = filteredCadets.length;
+        
+        // Calculate GPA
+        let totalPoints = 0;
+        let totalGrades = 0;
+        
+        filteredCadets.forEach(cadet => {
+            Object.values(cadet.classes).forEach(grade => {
+                if (grade) {
+                    let points = 0;
+                    switch (grade) {
+                        case 'A': points = 4; break;
+                        case 'B': points = 3; break;
+                        case 'C': points = 2; break;
+                        case 'D': points = 1; break;
+                        case 'F': points = 0; break;
+                    }
+                    totalPoints += points;
+                    totalGrades++;
+                }
+            });
+        });
+        
+        const avgGPA = totalGrades > 0 ? (totalPoints / totalGrades).toFixed(2) : 'N/A';
+        
+        // Total classes
+        let totalClasses = 0;
+        filteredCadets.forEach(cadet => {
+            totalClasses += Object.keys(cadet.classes).length;
+        });
+        
+        return {
+            totalCadets,
+            avgGPA,
+            totalClasses
+        };
+    }
+    
+    // Get detailed grade distribution by class
+    function getDetailedClassGrades(filteredCadets) {
+        const classGrades = {};
+        
+        // Collect all grades by class
+        filteredCadets.forEach(cadet => {
+            Object.entries(cadet.classes).forEach(([className, grade]) => {
+                if (!classGrades[className]) {
+                    classGrades[className] = {
+                        'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0, 'No Grade': 0,
+                        'total': 0
+                    };
+                }
+                
+                if (grade) {
+                    classGrades[className][grade] = (classGrades[className][grade] || 0) + 1;
+                } else {
+                    classGrades[className]['No Grade'] = (classGrades[className]['No Grade'] || 0) + 1;
+                }
+                
+                classGrades[className]['total']++;
+            });
+        });
+        
+        // Calculate average GPA for each class
+        Object.values(classGrades).forEach(grades => {
+            const totalPoints = (grades['A'] * 4) + (grades['B'] * 3) + 
+                                (grades['C'] * 2) + (grades['D'] * 1);
+            const countWithGrades = grades.total - (grades['No Grade'] || 0);
+            
+            if (countWithGrades > 0) {
+                grades['avgGPA'] = (totalPoints / countWithGrades).toFixed(2);
+            } else {
+                grades['avgGPA'] = 'N/A';
+            }
+        });
+        
+        return classGrades;
+    }
+    
+    // Populate the detailed grade distribution table
+    function updateDetailedGradeTable() {
+        const filteredCadets = filterCadetsByCompany();
+        
+        // Update summary statistics
+        const stats = calculateStatistics(filteredCadets);
+        document.getElementById('averageGPA').textContent = stats.avgGPA;
+        document.getElementById('totalCadets').textContent = stats.totalCadets;
+        
+        const classGrades = getDetailedClassGrades(filteredCadets);
+        const tableBody = document.getElementById('detailedGradeTableBody');
+        const hideEmptyClasses = document.getElementById('hideEmptyClasses').checked;
+        
+        // Clear the table
+        tableBody.innerHTML = '';
+        
+        // Sort classes alphabetically
+        const sortedClasses = Object.keys(classGrades).sort();
+        
+        if (sortedClasses.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="10" class="text-center">No class data available</td></tr>';
+            return;
+        }
+        
+        sortedClasses.forEach(className => {
+            const grades = classGrades[className];
+            
+            // Skip classes with no grades if the checkbox is checked
+            if (hideEmptyClasses && grades['total'] === grades['No Grade']) {
+                return;
+            }
+            
+            const row = document.createElement('tr');
+            row.className = 'class-row';
+            row.dataset.className = className;
+            
+            // Create cell for class name
+            const nameCell = document.createElement('td');
+            nameCell.textContent = className;
+            row.appendChild(nameCell);
+            
+            // Create cells for each grade
+            ['A', 'B', 'C', 'D', 'F', 'No Grade'].forEach(grade => {
+                const cell = document.createElement('td');
+                
+                // Add badge with count
+                const badge = document.createElement('span');
+                badge.className = `badge bg-${getGradeColor(grade)}`;
+                badge.textContent = grades[grade] || 0;
+                cell.appendChild(badge);
+                
+                row.appendChild(cell);
+            });
+            
+            // Total cell
+            const totalCell = document.createElement('td');
+            totalCell.textContent = grades.total;
+            row.appendChild(totalCell);
+            
+            // Average GPA cell
+            const gpaCell = document.createElement('td');
+            
+            // Color code the GPA
+            let gpaClass = '';
+            if (grades.avgGPA !== 'N/A') {
+                const gpa = parseFloat(grades.avgGPA);
+                if (gpa >= 3.5) gpaClass = 'text-success fw-bold';
+                else if (gpa >= 2.5) gpaClass = 'text-info fw-bold';
+                else if (gpa >= 1.5) gpaClass = 'text-warning fw-bold';
+                else gpaClass = 'text-danger fw-bold';
+            }
+            
+            gpaCell.innerHTML = `<span class="${gpaClass}">${grades.avgGPA}</span>`;
+            row.appendChild(gpaCell);
+            
+            // Charts button cell
+            const chartCell = document.createElement('td');
+            const chartButton = document.createElement('button');
+            chartButton.className = 'btn btn-sm btn-primary btn-xs px-2 py-0';
+            chartButton.innerHTML = '<i class="fas fa-chart-pie me-1"></i>';
+            chartButton.dataset.className = className;
+            chartButton.setAttribute('title', 'View chart');
+            chartButton.addEventListener('click', showClassDetailChart);
+            chartCell.appendChild(chartButton);
+            row.appendChild(chartCell);
+            
+            tableBody.appendChild(row);
+        });
+        
+        // If no rows were added (all filtered out)
+        if (tableBody.children.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="10" class="text-center">No classes match the current filters</td></tr>';
+        }
+    }
+    
+    // Helper function to get color for grade badges
+    function getGradeColor(grade) {
+        switch(grade) {
+            case 'A': return 'primary';
+            case 'B': return 'info';
+            case 'C': return 'warning';
+            case 'D': return 'orange';
+            case 'F': return 'danger';
+            default: return 'secondary';
+        }
+    }
+    
+    // Show detailed chart for a specific class
+    let classDetailChart = null;
+    
+    function showClassDetailChart(event) {
+        const className = event.currentTarget.dataset.className;
+        const filteredCadets = filterCadetsByCompany();
+        const classGrades = getDetailedClassGrades(filteredCadets)[className];
+        
+        // Set modal title
+        document.getElementById('classDetailModalTitle').textContent = `Grade Distribution: ${className}`;
+        
+        // Update count badges
+        document.getElementById('countA').textContent = classGrades['A'] || 0;
+        document.getElementById('countB').textContent = classGrades['B'] || 0;
+        document.getElementById('countC').textContent = classGrades['C'] || 0;
+        document.getElementById('countD').textContent = classGrades['D'] || 0;
+        document.getElementById('countF').textContent = classGrades['F'] || 0;
+        
+        // Update summary
+        const totalStudents = classGrades.total;
+        const avgGPA = classGrades.avgGPA;
+        document.getElementById('classDetailSummary').textContent = 
+            `Average GPA: ${avgGPA} | Total Students: ${totalStudents} | Class: ${className}`;
+        
+        // Prepare chart data
+        const gradeLabels = ['A', 'B', 'C', 'D', 'F', 'No Grade'];
+        const gradeData = gradeLabels.map(grade => classGrades[grade] || 0);
+        const gradeColors = [
+            chartColors.blue,       // 'A' - primary (blue)
+            chartColors.cyan,       // 'B' - info (cyan)
+            chartColors.yellow,     // 'C' - warning (yellow)
+            chartColors.orange,     // 'D' - orange 
+            chartColors.red,        // 'F' - danger (red)
+            chartColors.gray        // 'No Grade' - secondary (gray)
+        ];
+        
+        // Get canvas context
+        const chartCanvas = document.getElementById('classDetailChart');
+        
+        // Destroy previous chart if it exists
+        if (classDetailChart) {
+            classDetailChart.destroy();
+        }
+        
+        // Create new chart
+        classDetailChart = new Chart(chartCanvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: gradeLabels,
+                datasets: [{
+                    label: 'Number of Cadets',
+                    data: gradeData,
+                    backgroundColor: gradeColors,
+                    borderColor: gradeColors.map(color => color.replace('0.8', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const total = classGrades.total;
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${value} cadets (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Cadets'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('classDetailModal'));
+        modal.show();
+    }
+    
+    // No need for chart initialization or data update functions as we only have the detailed table
+    
+    // Filter the detailed grade table by class name
+    function filterDetailedGradeTable() {
+        const filterValue = document.getElementById('classFilterInput').value.toLowerCase();
+        const rows = document.querySelectorAll('#detailedGradeTableBody .class-row');
+        
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const className = row.dataset.className.toLowerCase();
+            if (className.includes(filterValue)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Show a message if no rows are visible
+        const tableBody = document.getElementById('detailedGradeTableBody');
+        if (visibleCount === 0 && tableBody.querySelector('.no-results') === null) {
+            const noResultsRow = document.createElement('tr');
+            noResultsRow.className = 'no-results';
+            noResultsRow.innerHTML = '<td colspan="10" class="text-center">No classes match your search</td>';
+            tableBody.appendChild(noResultsRow);
+        } else if (visibleCount > 0) {
+            const noResultsRow = tableBody.querySelector('.no-results');
+            if (noResultsRow) {
+                noResultsRow.remove();
+            }
+        }
+    }
+    
+    // Initialize when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Just initialize the detailed table
+        updateDetailedGradeTable();
+        
+        // Update table when filter changes
+        document.querySelectorAll('.company-filter').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateDetailedGradeTable();
+            });
+        });
+        
+        // Set up class filter input
+        const classFilterInput = document.getElementById('classFilterInput');
+        classFilterInput.addEventListener('input', filterDetailedGradeTable);
+        
+        // Set up hide empty classes checkbox
+        const hideEmptyClassesCheckbox = document.getElementById('hideEmptyClasses');
+        hideEmptyClassesCheckbox.addEventListener('change', updateDetailedGradeTable);
+    });
+</script>
+{% endblock %}
